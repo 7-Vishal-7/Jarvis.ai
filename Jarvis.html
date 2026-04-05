@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>J.A.R.V.I.S</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+
+  :root {
+    --arc: #00d4ff;
+    --arc-glow: #00aaff;
+    --gold: #ffc300;
+    --red: #ff2020;
+    --dark: #020a12;
+    --panel: rgba(0,180,255,0.06);
+    --border: rgba(0,212,255,0.25);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--dark);
+    color: var(--arc);
+    font-family: 'Share Tech Mono', monospace;
+    height: 100vh;
+    overflow: hidden;
+    cursor: none;
+  }
+
+  /* ── GRID LINES ── */
+  .grid {
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    animation: gridPulse 4s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes gridPulse {
+    0%,100% { opacity: 0.6 }
+    50%      { opacity: 1   }
+  }
+
+  /* ── SCANLINES ── */
+  .scanlines {
+    position: fixed; inset: 0;
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      transparent 3px,
+      rgba(0,0,0,0.15) 3px,
+      rgba(0,0,0,0.15) 4px
+    );
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  /* ── ARC REACTOR ── */
+  .arc-container {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .arc-ring {
+    position: absolute;
+    border-radius: 50%;
+    border: 1px solid var(--arc);
+    animation: arcSpin linear infinite;
+  }
+  .arc-ring:nth-child(1) { width:320px; height:320px; border-color: rgba(0,212,255,0.15); animation-duration: 30s; }
+  .arc-ring:nth-child(2) { width:270px; height:270px; border-color: rgba(0,212,255,0.2); animation-duration: 20s; animation-direction: reverse; border-style: dashed; }
+  .arc-ring:nth-child(3) { width:220px; height:220px; border-color: rgba(0,212,255,0.3); animation-duration: 12s; border-width: 2px; }
+  .arc-ring:nth-child(4) { width:170px; height:170px; border-color: rgba(255,195,0,0.4); animation-duration: 8s; animation-direction: reverse; border-width: 2px; }
+  .arc-ring:nth-child(5) { width:120px; height:120px; border-color: var(--arc); animation-duration: 5s; border-width: 2px; }
+
+  /* tick marks on rings */
+  .arc-ring::before {
+    content: '';
+    position: absolute;
+    top: -3px; left: 50%;
+    transform: translateX(-50%);
+    width: 6px; height: 6px;
+    background: var(--arc);
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--arc);
+  }
+
+  @keyframes arcSpin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+
+  .arc-core {
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #ffffff 0%, var(--arc) 40%, rgba(0,100,200,0.3) 80%);
+    box-shadow:
+      0 0 20px var(--arc),
+      0 0 60px var(--arc),
+      0 0 120px rgba(0,212,255,0.4),
+      inset 0 0 20px rgba(255,255,255,0.3);
+    animation: corePulse 2s ease-in-out infinite;
+    z-index: 10;
+  }
+  @keyframes corePulse {
+    0%,100% { transform: scale(1);   box-shadow: 0 0 20px var(--arc), 0 0 60px var(--arc), 0 0 120px rgba(0,212,255,0.4); }
+    50%      { transform: scale(1.1); box-shadow: 0 0 30px var(--arc), 0 0 90px var(--arc), 0 0 180px rgba(0,212,255,0.6); }
+  }
+
+  /* ── HEADER ── */
+  header {
+    position: fixed; top: 0; left: 0; right: 0;
+    padding: 18px 40px;
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(to bottom, rgba(0,20,40,0.9), transparent);
+    z-index: 100;
+  }
+
+  .logo {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.8rem;
+    font-weight: 900;
+    letter-spacing: 0.3em;
+    background: linear-gradient(90deg, var(--arc), var(--gold));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: none;
+    filter: drop-shadow(0 0 10px rgba(0,212,255,0.5));
+  }
+
+  .logo-sub {
+    font-size: 0.55rem;
+    letter-spacing: 0.5em;
+    color: rgba(0,212,255,0.6);
+    margin-top: -4px;
+    display: block;
+    font-family: 'Share Tech Mono', monospace;
+    -webkit-text-fill-color: rgba(0,212,255,0.6);
+  }
+
+  .status-bar {
+    display: flex; gap: 24px; align-items: center;
+  }
+
+  .status-item {
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    color: rgba(0,212,255,0.7);
+  }
+  .status-item span { color: var(--gold); }
+
+  /* ── CORNER BRACKETS ── */
+  .corner {
+    position: fixed;
+    width: 40px; height: 40px;
+    z-index: 50;
+  }
+  .corner::before, .corner::after {
+    content: '';
+    position: absolute;
+    background: var(--arc);
+    box-shadow: 0 0 8px var(--arc);
+  }
+  .corner::before { width: 100%; height: 2px; }
+  .corner::after  { width: 2px; height: 100%; }
+  .corner.tl { top: 70px; left: 20px; }
+  .corner.tr { top: 70px; right: 20px; transform: scaleX(-1); }
+  .corner.bl { bottom: 20px; left: 20px; transform: scaleY(-1); }
+  .corner.br { bottom: 20px; right: 20px; transform: scale(-1,-1); }
+
+  /* ── SIDE PANELS ── */
+  .panel {
+    position: fixed;
+    padding: 16px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    backdrop-filter: blur(4px);
+    z-index: 50;
+  }
+
+  .panel-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.55rem;
+    letter-spacing: 0.3em;
+    color: var(--gold);
+    margin-bottom: 12px;
+    border-bottom: 1px solid rgba(255,195,0,0.2);
+    padding-bottom: 6px;
+  }
+
+  .panel-left {
+    left: 20px; top: 50%;
+    transform: translateY(-50%);
+    width: 190px;
+  }
+
+  .panel-right {
+    right: 20px; top: 50%;
+    transform: translateY(-50%);
+    width: 190px;
+  }
+
+  .panel-bottom {
+    bottom: 30px; left: 50%;
+    transform: translateX(-50%);
+    width: 440px;
+    text-align: center;
+  }
+
+  /* ── DATA ROWS ── */
+  .data-row {
+    display: flex; justify-content: space-between;
+    font-size: 0.6rem;
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(0,212,255,0.06);
+    color: rgba(0,212,255,0.8);
+  }
+  .data-row .val { color: var(--arc); }
+
+  /* ── STAT BARS ── */
+  .stat-bar-wrap { margin: 6px 0; }
+  .stat-label { font-size: 0.55rem; color: rgba(0,212,255,0.6); margin-bottom: 3px; letter-spacing: 0.1em; }
+  .stat-bar {
+    height: 4px;
+    background: rgba(0,212,255,0.1);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .stat-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--arc-glow), var(--arc));
+    box-shadow: 0 0 6px var(--arc);
+    border-radius: 2px;
+    animation: barFill 2s ease forwards;
+  }
+  @keyframes barFill { from { width: 0% } }
+
+  /* ── CLAP BUTTON ── */
+  #clapBtn {
+    background: transparent;
+    border: 2px solid var(--arc);
+    color: var(--arc);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    padding: 12px 28px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s;
+    clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+    margin-top: 10px;
+  }
+  #clapBtn::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: var(--arc);
+    transform: translateX(-100%);
+    transition: transform 0.3s;
+    z-index: -1;
+  }
+  #clapBtn:hover::before { transform: translateX(0); }
+  #clapBtn:hover { color: var(--dark); box-shadow: 0 0 20px var(--arc); }
+  #clapBtn:active { transform: scale(0.97); }
+
+  /* ── LAUNCH OVERLAY ── */
+  #launchOverlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0);
+    z-index: 900;
+    display: none;
+    pointer-events: none;
+  }
+  #launchOverlay.active {
+    display: block;
+    animation: flashWave 0.8s ease-out forwards;
+  }
+  @keyframes flashWave {
+    0%  { background: rgba(0,212,255,0.4); }
+    40% { background: rgba(255,195,0,0.2); }
+    100%{ background: rgba(0,0,0,0); }
+  }
+
+  /* ── LAUNCH LOG ── */
+  #launchLog {
+    font-size: 0.6rem;
+    letter-spacing: 0.08em;
+    line-height: 1.8;
+    min-height: 80px;
+    color: rgba(0,212,255,0.7);
+    text-align: left;
+  }
+  #launchLog .line { opacity: 0; animation: fadeIn 0.4s ease forwards; }
+  #launchLog .ok   { color: #00ff88; }
+  #launchLog .act  { color: var(--gold); }
+  @keyframes fadeIn { to { opacity: 1; } }
+
+  /* ── CLAP INDICATOR ── */
+  #clapIndicator {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    width: 400px; height: 400px;
+    border-radius: 50%;
+    border: 3px solid var(--gold);
+    box-shadow: 0 0 60px var(--gold), 0 0 120px rgba(255,195,0,0.3);
+    z-index: 800;
+    pointer-events: none;
+    opacity: 0;
+  }
+  #clapIndicator.pulse {
+    animation: clapPulse 0.8s ease-out forwards;
+  }
+  @keyframes clapPulse {
+    0%   { transform: translate(-50%,-50%) scale(0.5); opacity: 1; }
+    100% { transform: translate(-50%,-50%) scale(1.5); opacity: 0; }
+  }
+
+  /* ── DATETIME ── */
+  #datetime {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.1rem;
+    color: var(--arc);
+    letter-spacing: 0.2em;
+    text-shadow: 0 0 15px var(--arc);
+  }
+
+  /* ── HEXAGON GRID DECO ── */
+  .hex-deco {
+    position: fixed;
+    opacity: 0.05;
+    font-size: 2rem;
+    color: var(--arc);
+    pointer-events: none;
+    animation: float 6s ease-in-out infinite;
+  }
+  .hex-deco:nth-child(1) { top: 15%; left: 8%; animation-delay: 0s; }
+  .hex-deco:nth-child(2) { top: 70%; left: 5%; animation-delay: 1s; }
+  .hex-deco:nth-child(3) { top: 20%; right: 8%; animation-delay: 2s; }
+  .hex-deco:nth-child(4) { top: 75%; right: 6%; animation-delay: 0.5s; }
+  @keyframes float {
+    0%,100% { transform: translateY(0); }
+    50%      { transform: translateY(-12px); }
+  }
+
+  /* ── TOP TICKER ── */
+  .ticker {
+    position: fixed;
+    top: 65px; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--arc), var(--gold), var(--arc), transparent);
+    animation: scan 3s linear infinite;
+  }
+  @keyframes scan { 0% { opacity: 0.3 } 50% { opacity: 1 } 100% { opacity: 0.3 } }
+
+  /* ── CUSTOM CURSOR ── */
+  .cursor {
+    position: fixed;
+    width: 20px; height: 20px;
+    border: 1px solid var(--arc);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    transition: transform 0.1s ease, width 0.2s, height 0.2s;
+    box-shadow: 0 0 10px var(--arc);
+  }
+  .cursor-dot {
+    position: fixed;
+    width: 4px; height: 4px;
+    background: var(--arc);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 6px var(--arc);
+  }
+</style>
+</head>
+<body>
+
+<!-- Custom cursor -->
+<div class="cursor" id="cursor"></div>
+<div class="cursor-dot" id="cursorDot"></div>
+
+<!-- Background -->
+<div class="grid"></div>
+<div class="scanlines"></div>
+<div class="ticker"></div>
+
+<!-- Hex decorations -->
+<div class="hex-deco">⬡</div>
+<div class="hex-deco">⬡</div>
+<div class="hex-deco">⬡</div>
+<div class="hex-deco">⬡</div>
+
+<!-- Corner brackets -->
+<div class="corner tl"></div>
+<div class="corner tr"></div>
+<div class="corner bl"></div>
+<div class="corner br"></div>
+
+<!-- Header -->
+<header>
+  <div>
+    <div class="logo">J.A.R.V.I.S</div>
+    <span class="logo-sub">JUST A RATHER VERY INTELLIGENT SYSTEM</span>
+  </div>
+  <div class="status-bar">
+    <div class="status-item">STARK PROTOCOL <span>ACTIVE</span></div>
+    <div class="status-item">ARC REACTOR <span>100%</span></div>
+    <div class="status-item" id="datetime">--:--:--</div>
+  </div>
+</header>
+
+<!-- Arc Reactor Center -->
+<div class="arc-container">
+  <div class="arc-ring"></div>
+  <div class="arc-ring"></div>
+  <div class="arc-ring"></div>
+  <div class="arc-ring"></div>
+  <div class="arc-ring"></div>
+  <div class="arc-core"></div>
+</div>
+
+<!-- Clap ripple indicator -->
+<div id="clapIndicator"></div>
+
+<!-- Launch flash overlay -->
+<div id="launchOverlay"></div>
+
+<!-- Left Panel -->
+<div class="panel panel-left">
+  <div class="panel-title">◈ SYSTEM STATUS</div>
+  <div class="data-row"><span>CPU</span><span class="val" id="cpu">--</span></div>
+  <div class="data-row"><span>MEMORY</span><span class="val" id="mem">--</span></div>
+  <div class="data-row"><span>NEURAL NET</span><span class="val">ONLINE</span></div>
+  <div class="data-row"><span>THREAT LEVEL</span><span class="val" style="color:#00ff88">NONE</span></div>
+  <div class="data-row"><span>SUIT STATUS</span><span class="val" style="color:var(--gold)">STANDBY</span></div>
+  <br/>
+  <div class="panel-title">◈ POWER</div>
+  <div class="stat-bar-wrap">
+    <div class="stat-label">REPULSOR CHARGE</div>
+    <div class="stat-bar"><div class="stat-fill" style="width:92%;animation-delay:0.2s"></div></div>
+  </div>
+  <div class="stat-bar-wrap">
+    <div class="stat-label">UNIBEAM</div>
+    <div class="stat-bar"><div class="stat-fill" style="width:78%;animation-delay:0.5s"></div></div>
+  </div>
+  <div class="stat-bar-wrap">
+    <div class="stat-label">SHIELD</div>
+    <div class="stat-bar"><div class="stat-fill" style="width:100%;animation-delay:0.8s;background:linear-gradient(90deg,var(--gold),#ffaa00)"></div></div>
+  </div>
+</div>
+
+<!-- Right Panel -->
+<div class="panel panel-right">
+  <div class="panel-title">◈ MISSION LOG</div>
+  <div class="data-row"><span>OPERATOR</span><span class="val">VISHAL</span></div>
+  <div class="data-row"><span>CLEARANCE</span><span class="val" style="color:var(--gold)">LEVEL 10</span></div>
+  <div class="data-row"><span>PROJECT</span><span class="val">STEWIE</span></div>
+  <div class="data-row"><span>TARGET</span><span class="val">TUM / TUHH</span></div>
+  <br/>
+  <div class="panel-title">◈ LAUNCH QUEUE</div>
+  <div class="data-row"><span>VS CODE</span><span class="val" id="s1" style="color:rgba(0,212,255,0.4)">IDLE</span></div>
+  <div class="data-row"><span>YT MUSIC</span><span class="val" id="s2" style="color:rgba(0,212,255,0.4)">IDLE</span></div>
+  <div class="data-row"><span>CHROME</span><span class="val" id="s3" style="color:rgba(0,212,255,0.4)">IDLE</span></div>
+  <div class="data-row"><span>CLAUDE.AI</span><span class="val" id="s4" style="color:rgba(0,212,255,0.4)">IDLE</span></div>
+</div>
+
+<!-- Bottom Panel -->
+<div class="panel panel-bottom">
+  <div class="panel-title">◈ VOICE ACTIVATION PROTOCOL</div>
+  <div id="launchLog">
+    <div style="color:rgba(0,212,255,0.5);font-size:0.6rem;letter-spacing:0.2em;">
+      AWAITING DOUBLE-CLAP TRIGGER...<br/>
+      <span style="color:rgba(0,212,255,0.3)">[ run jarvis_launcher.py for real clap detection ]</span>
+    </div>
+  </div>
+  <button id="clapBtn" onclick="simulateLaunch()">👏 SIMULATE CLAP</button>
+</div>
+
+<script>
+// ── CURSOR ──
+const cursor = document.getElementById('cursor');
+const dot    = document.getElementById('cursorDot');
+document.addEventListener('mousemove', e => {
+  cursor.style.left = e.clientX + 'px';
+  cursor.style.top  = e.clientY + 'px';
+  dot.style.left    = e.clientX + 'px';
+  dot.style.top     = e.clientY + 'px';
+});
+
+// ── DATETIME ──
+function updateTime() {
+  const now = new Date();
+  document.getElementById('datetime').textContent =
+    now.toLocaleTimeString('en-IN', {hour12: false}) + ' IST';
+}
+setInterval(updateTime, 1000);
+updateTime();
+
+// ── FAKE SYSTEM METRICS ──
+function updateMetrics() {
+  document.getElementById('cpu').textContent = (60 + Math.random()*30).toFixed(1) + '%';
+  document.getElementById('mem').textContent = (74 + Math.random()*10).toFixed(1) + '%';
+}
+setInterval(updateMetrics, 1500);
+updateMetrics();
+
+// ── CLAP RIPPLE ──
+function triggerClapRipple() {
+  const el = document.getElementById('clapIndicator');
+  el.classList.remove('pulse');
+  void el.offsetWidth;
+  el.classList.add('pulse');
+}
+
+// ── LAUNCH SEQUENCE ──
+const statEls = { vscode: 's1', ytmusic: 's2', chrome: 's3', claude: 's4' };
+
+function setStatus(id, text, color='#00ff88') {
+  const el = document.getElementById(id);
+  el.textContent = text;
+  el.style.color = color;
+}
+
+function logLine(text, cls='', delay=0) {
+  return new Promise(res => {
+    setTimeout(() => {
+      const log = document.getElementById('launchLog');
+      const div = document.createElement('div');
+      div.className = 'line ' + cls;
+      div.textContent = text;
+      log.appendChild(div);
+      log.scrollTop = log.scrollHeight;
+      res();
+    }, delay);
+  });
+}
+
+async function simulateLaunch() {
+  document.getElementById('launchLog').innerHTML = '';
+  document.getElementById('clapBtn').disabled = true;
+
+  // Reset statuses
+  ['s1','s2','s3','s4'].forEach(id => setStatus(id, 'IDLE', 'rgba(0,212,255,0.4)'));
+
+  // Clap ripple + flash
+  triggerClapRipple();
+  setTimeout(triggerClapRipple, 300);
+
+  const overlay = document.getElementById('launchOverlay');
+  overlay.classList.add('active');
+  setTimeout(() => overlay.classList.remove('active'), 800);
+
+  await logLine('> DOUBLE-CLAP DETECTED', 'act', 0);
+  await logLine('> INITIATING PROTOCOL STARK...', 'act', 300);
+
+  await new Promise(r => setTimeout(r, 600));
+  await logLine('[ 1/4 ] Launching VS Code...', '', 0);
+  await new Promise(r => setTimeout(r, 700));
+  await logLine('        VS Code → ONLINE ✓', 'ok', 0);
+  setStatus('s1', 'ONLINE', '#00ff88');
+
+  await new Promise(r => setTimeout(r, 400));
+  await logLine('[ 2/4 ] Loading YT Music — Iron Man theme...', '', 0);
+  await new Promise(r => setTimeout(r, 800));
+  await logLine('        YT Music → STREAMING ✓', 'ok', 0);
+  setStatus('s2', 'STREAMING', '#00ff88');
+
+  await new Promise(r => setTimeout(r, 400));
+  await logLine('[ 3/4 ] Opening Chrome window...', '', 0);
+  await new Promise(r => setTimeout(r, 600));
+  await logLine('        Chrome → ONLINE ✓', 'ok', 0);
+  setStatus('s3', 'ONLINE', '#00ff88');
+
+  await new Promise(r => setTimeout(r, 400));
+  await logLine('[ 4/4 ] Opening Claude.ai...', '', 0);
+  await new Promise(r => setTimeout(r, 700));
+  await logLine('        Claude → ONLINE ✓', 'ok', 0);
+  setStatus('s4', 'ONLINE', '#00ff88');
+
+  await new Promise(r => setTimeout(r, 400));
+  await logLine('> ARRANGING 4-WAY SPLIT LAYOUT...', 'act', 0);
+  await new Promise(r => setTimeout(r, 800));
+  await logLine('> ALL SYSTEMS ONLINE. GOOD EVENING, SIR. ✦', 'ok', 0);
+
+  setTimeout(() => { document.getElementById('clapBtn').disabled = false; }, 3000);
+}
+
+// ── KEYBOARD SHORTCUT: Space = simulate clap ──
+document.addEventListener('keydown', e => {
+  if (e.code === 'Space' && !document.getElementById('clapBtn').disabled) {
+    e.preventDefault();
+    simulateLaunch();
+  }
+});
+</script>
+</body>
+</html>
